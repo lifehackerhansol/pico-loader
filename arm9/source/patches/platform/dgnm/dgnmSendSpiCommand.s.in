@@ -1,0 +1,9 @@
+dgnm_sendSpiCommand:
+    strb r5, [r4, #2]
+SPI_wait_busy:
+    ldr r5, [r4]
+    lsrs r5, r5, #7
+    bne SPI_wait_busy
+
+    ldrb r5, [r4,#2]
+    bx lr
