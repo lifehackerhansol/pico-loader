@@ -4,6 +4,7 @@
 #include "thumbInstructions.h"
 #include "CardiSetCardDmaPatchCode.h"
 #include "patches/platform/LoaderPlatform.h"
+#include "patches/OffsetToSectorRemapPatchCode.h"
 #include "patches/arm9/RomOffsetToSdSectorPatchCode.h"
 #include "CardiTryReadCardDmaPatch.h"
 
@@ -519,21 +520,42 @@ void CardiTryReadCardDmaPatch::ApplyPatch(PatchContext& patchContext)
     u32 osDisableIrqMask = resolveCallWithAutoload(cardiOnReadCard + cardiOnReadCardDisableIrqCallOffset, autoloadAdjuster, _thumb);
 
     // begin with patching
-    auto sdReadDmaPatchCode = patchContext.GetLoaderPlatform()->CreateSdReadDmaPatchCode(
-        patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap(), (const void*)miiCardDmaCopy32);
-    auto romOffsetToSdSectorPatchCode = patchContext.GetPatchCodeCollection().GetOrAddSharedPatchCode([&]
+    const CardiSetCardDmaPatchCode *cardiSetCardDmaPatchCode;
+    if (patchContext.GetLoaderPlatform()->HasRomReads())
     {
-        return new RomOffsetToSdSectorPatchCode(patchContext.GetPatchHeap(),
-            (const rom_file_info_t*)((u32)SHARED_ROM_FILE_INFO - 0x02F00000 + 0x02700000));
-    });
-    auto cardiSetCardDmaPatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<CardiSetCardDmaPatchCode>
-    (
-        patchContext.GetPatchHeap(),
-        romOffsetToSdSectorPatchCode,
-        sdReadDmaPatchCode,
-        (const void*)cardiCommon,
-        (const void*)osDisableIrqMask
-    );
+        auto romReadDmaPatchCode = patchContext.GetLoaderPlatform()->CreateSdReadDmaPatchCode(
+            patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap(), (const void*)miiCardDmaCopy32);
+        auto offsetToSectorRemapPatchCode = patchContext.GetPatchCodeCollection().GetOrAddSharedPatchCode([&]
+        {
+            return new OffsetToSectorRemapPatchCode(patchContext.GetPatchHeap());
+        });
+        cardiSetCardDmaPatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<CardiSetCardDmaPatchCode>
+        (
+            patchContext.GetPatchHeap(),
+            offsetToSectorRemapPatchCode,
+            romReadDmaPatchCode,
+            (const void*)cardiCommon,
+            (const void*)osDisableIrqMask
+        );
+    }
+    else
+    {
+        auto sdReadDmaPatchCode = patchContext.GetLoaderPlatform()->CreateSdReadDmaPatchCode(
+            patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap(), (const void*)miiCardDmaCopy32);
+        auto romOffsetToSdSectorPatchCode = patchContext.GetPatchCodeCollection().GetOrAddSharedPatchCode([&]
+        {
+            return new RomOffsetToSdSectorPatchCode(patchContext.GetPatchHeap(),
+                (const rom_file_info_t*)((u32)SHARED_ROM_FILE_INFO - 0x02F00000 + 0x02700000));
+        });
+        cardiSetCardDmaPatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<CardiSetCardDmaPatchCode>
+        (
+            patchContext.GetPatchHeap(),
+            romOffsetToSdSectorPatchCode,
+            sdReadDmaPatchCode,
+            (const void*)cardiCommon,
+            (const void*)osDisableIrqMask
+        );
+    }
 
     if (_thumb)
     {
