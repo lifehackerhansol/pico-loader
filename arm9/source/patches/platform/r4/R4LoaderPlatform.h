@@ -1,5 +1,6 @@
 #pragma once
 #include "../LoaderPlatform.h"
+#include "R4ReadRomDmaPatchCode.h"
 #include "R4ReadRomPatchCode.h"
 #include "R4ReadSdPatchCode.h"
 #include "R4WriteSdPatchCode.h"
@@ -15,6 +16,13 @@ public:
         {
             return new R4ReadSdPatchCode(patchHeap);
         });
+    }
+
+    const IReadSectorsDmaPatchCode* CreateSdReadDmaPatchCode(PatchCodeCollection& patchCodeCollection,
+        PatchHeap& patchHeap, const void* miiCardDmaCopy32Ptr) const override
+    {
+        return patchCodeCollection.AddUniquePatchCode<R4ReadRomDmaPatchCode>(
+            patchHeap, miiCardDmaCopy32Ptr);
     }
 
     const IWriteSectorsPatchCode* CreateSdWritePatchCode(
@@ -38,7 +46,7 @@ public:
     LoaderPlatformType GetPlatformType() const override { return LoaderPlatformType::Slot1; }
 
     bool HasRomReads() const override { return true; }
-
+    bool HasDmaSdReads() const override { return true; }
     void PrepareRomBoot(u32 romDirSector, u32 romDirSectorOffset) const override;
 
 private:
