@@ -17,8 +17,9 @@ writesave_asm:
     movs r0, r5 // will be rounded down by function
     ldr r3, writesave_save_offset_to_sd_sector_asm_address
     bl blx_r3
-    cmp r0, #0
-    beq end // out of bounds
+    // HACK disable OOB check, doesn't work when using hw backed save read
+    //cmp r0, #0
+    //beq end // out of bounds
 
     push {r0}
 

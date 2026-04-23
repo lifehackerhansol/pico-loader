@@ -17,8 +17,9 @@ verifysave_asm:
     movs r0, r5 // will be rounded down by function
     ldr r3, verifysave_save_offset_to_sd_sector_asm_address
     bl blx_r3
-    cmp r0, #0
-    beq end // out of bounds
+    // HACK disable OOB check, doesn't work when using hw backed save read
+    //cmp r0, #0
+    //beq end // out of bounds
 
     ldr r1, verifysave_tmpBufferPtr
     movs r2, #1 // single sector
