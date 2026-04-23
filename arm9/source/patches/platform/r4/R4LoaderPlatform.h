@@ -39,7 +39,9 @@ public:
 
     bool HasRomReads() const override { return true; }
 
-    void PrepareRomBoot(u32 romDirSector, u32 romDirSectorOffset) const override;
+    void PrepareRomBoot(
+        u32 romDirSector, u32 romDirSectorOffset,
+        u32 saveDirSector, u32 saveDirSectorOffset) const override;
 
 private:
     u32 ReadCardInfo() const;

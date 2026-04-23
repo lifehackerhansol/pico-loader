@@ -45,6 +45,8 @@ static LoaderPlatform* sLoaderPlatform;
 
 static u32 sRomDirSector;
 static u32 sRomDirSectorOffset;
+static u32 sSaveDirSector;
+static u32 sSaveDirSectorOffset;
 static u16 sIsCloneBootRom;
 static u16 sRunInDSiMode;
 static loader_info_t sLoaderInfo;
@@ -188,6 +190,12 @@ static void handleSetRomFileInfoCommand()
     sRunInDSiMode = (flags & 2) != 0;
 }
 
+static void handleSetSaveFileInfoCommand()
+{
+    sSaveDirSector = receiveFromArm7();
+    sSaveDirSectorOffset = receiveFromArm7();
+}
+
 static void handleInitializeLoaderInfoCommand()
 {
     dc_invalidateRange(TWL_SHARED_MEMORY->ntrSharedMem.cardRomHeader, sizeof(loader_info_t));
@@ -244,7 +252,8 @@ static void handleBootCommand()
 {
     bool isSdkResetSystem = receiveFromArm7() != 0;
     REG_EXMEMCNT &= ~0x0880; // map ds and gba slot to arm9
-    sLoaderPlatform->PrepareRomBoot(sRomDirSector, sRomDirSectorOffset);
+    sLoaderPlatform->PrepareRomBoot(
+        sRomDirSector, sRomDirSectorOffset, sSaveDirSector, sSaveDirSectorOffset);
     Arm9IoRegisterClearer().ClearNtrIoRegisters(isSdkResetSystem);
     REG_EXMEMCNT |= 0x0880; // map ds and gba slot to arm7
     if (sRunInDSiMode)
@@ -328,6 +337,11 @@ static void handleArm7Command(u32 command)
             handleSetRomFileInfoCommand();
             break;
         }
+        case IPC_COMMAND_ARM9_SET_SAVE_FILE_INFO:
+        {
+            handleSetSaveFileInfoCommand();
+            break;
+        }
         case IPC_COMMAND_ARM9_INITIALIZE_LOADER_INFO:
         {
             handleInitializeLoaderInfoCommand();
@@ -393,6 +407,8 @@ extern "C" void loaderMain()
 
     sRomDirSector = 0;
     sRomDirSectorOffset = 0;
+    sSaveDirSector = 0;
+    sSaveDirSectorOffset = 0;
     sIsCloneBootRom = false;
 
     LOG_DEBUG("Pico Loader ARM9 started\n");

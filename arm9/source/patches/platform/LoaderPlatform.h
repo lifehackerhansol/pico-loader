@@ -38,6 +38,20 @@ public:
     virtual const IReadSectorsPatchCode* CreateRomReadPatchCode(
         PatchCodeCollection& patchCodeCollection, PatchHeap& patchHeap) const { return nullptr; }
 
+    /// @brief Creates the save read patch code for the platform.
+    /// @param patchCodeCollection The patch code collection.
+    /// @param patchHeap The patch heap.
+    /// @return A unique pointer to the created save read patch code.
+    virtual const IReadSectorsPatchCode* CreateSaveReadPatchCode(
+        PatchCodeCollection& patchCodeCollection, PatchHeap& patchHeap) const { return nullptr; }
+
+    /// @brief Creates the save write patch code for the platform.
+    /// @param patchCodeCollection The patch code collection.
+    /// @param patchHeap The patch heap.
+    /// @return A unique pointer to the created save write patch code.
+    virtual const IWriteSectorsPatchCode* CreateSaveWritePatchCode(
+        PatchCodeCollection& patchCodeCollection, PatchHeap& patchHeap) const { return nullptr; }
+
     /// @brief Returns the type of this loader platform.
     /// @return The type of this loader platform.
     virtual LoaderPlatformType GetPlatformType() const = 0;
@@ -46,6 +60,10 @@ public:
     /// @return True if the platform supports rom reads, or false otherwise.
     virtual bool HasRomReads() const { return false; }
 
+    /// @brief Checks if the platform supports save reads and writes directly.
+    /// @return True if the platform supports save reads and writes, or false otherwise.
+    virtual bool HasSaveReadWrite() const { return false; }
+
     /// @brief Checks if the platform supports sd reads via dma.
     /// @return True if the platform supports sd reads via dma, or false otherwise.
     virtual bool HasDmaSdReads() const { return false; }
@@ -53,7 +71,11 @@ public:
     /// @brief Prepares the platform for running a rom.
     /// @param romDirSector The directory sector of the rom file, or 0 if not applicable.
     /// @param romDirSectorOffset The byte offset of the rom fat entry in the directory sector.
-    virtual void PrepareRomBoot(u32 romDirSector, u32 romDirSectorOffset) const { }
+    /// @param saveDirSector The directory sector of the save file, or 0 if not applicable.
+    /// @param saveDirSectorOffset The byte offset of the save fat entry in the directory sector.
+    virtual void PrepareRomBoot(
+        u32 romDirSector, u32 romDirSectorOffset,
+        u32 saveDirSector, u32 saveDirSectorOffset) const { }
 
     /// @brief For platforms that need it this function may be used to (re)initialize the sd card.
     /// @return True if the sd card initialization was successful, or false otherwise.

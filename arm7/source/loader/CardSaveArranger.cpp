@@ -17,7 +17,7 @@
 static const u8 sBandBrothersSaveId[12] = { 0x48, 0x8A, 0x00, 0x00, 0x42, 0x42, 0x44, 0x58, 0x31, 0x32, 0x33, 0x34 };
 static const u8 sJamWithTheBandSaveId[16] = { 0xEC, 0x00, 0x9E, 0xA1, 0x51, 0x65, 0x34, 0x35, 0x30, 0x35, 0x30, 0x31, 0x19, 0x19, 0x02, 0x0A };
 
-bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR* savePath) const
+bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR* savePath, CardSaveResult& result) const
 {
     u32 saveSize = DEFAULT_SAVE_SIZE;
     if (header->nandBackupRegionStart != 0)
@@ -48,6 +48,7 @@ bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR
     }
     if (saveSize == 0)
     {
+        result.hasSave = false;
         return true;
     }
 
@@ -144,11 +145,15 @@ bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR
 
     LOG_DEBUG("Made save cluster table\n");
 
+    result.saveDirSector = file->dir_sect;
+    result.saveDirSectorOffset = (u32)(file->dir_ptr - file->obj.fs->win);
+
     if (f_close(file.get()) != FR_OK)
     {
         LOG_FATAL("Failed to close save file\n");
         return false;
     }
 
+    result.hasSave = true;
     return true;
 }

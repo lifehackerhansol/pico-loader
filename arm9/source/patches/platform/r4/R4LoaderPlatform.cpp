@@ -30,7 +30,9 @@ void R4LoaderPlatform::PrepareClusterMap(bool isSave, u32 dirSector, u32 dirSect
     } while (response);
 }
 
-void R4LoaderPlatform::PrepareRomBoot(u32 romDirSector, u32 romDirSectorOffset) const
+void R4LoaderPlatform::PrepareRomBoot(
+    u32 romDirSector, u32 romDirSectorOffset,
+    u32 saveDirSector, u32 saveDirSectorOffset) const
 {
     ReadCardInfo();
     if (romDirSector != 0)

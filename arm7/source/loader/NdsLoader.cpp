@@ -226,7 +226,17 @@ void NdsLoader::Load(BootMode bootMode)
             {
                 if (bootMode != BootMode::SdkResetSystem)
                 {
-                    if (!CardSaveArranger().SetupCardSave(&_romHeader, _savePath))
+                    CardSaveResult cardSaveResult;
+                    if (CardSaveArranger().SetupCardSave(&_romHeader, _savePath, cardSaveResult))
+                    {
+                        if (cardSaveResult.hasSave)
+                        {
+                            sendToArm9(IPC_COMMAND_ARM9_SET_SAVE_FILE_INFO);
+                            sendToArm9(cardSaveResult.saveDirSector);
+                            sendToArm9(cardSaveResult.saveDirSectorOffset);
+                        }
+                    }
+                    else
                     {
                         ErrorDisplay().PrintError("Failed to setup save file.");
                         return;

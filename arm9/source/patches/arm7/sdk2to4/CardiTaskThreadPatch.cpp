@@ -8,6 +8,7 @@
 #include "patches/arm7/VerifySavePatchCode.h"
 #include "patches/FunctionSignature.h"
 #include "patches/platform/LoaderPlatform.h"
+#include "patches/OffsetToSectorRemapPatchCode.h"
 #include "patches/SaveOffsetToSdSectorPatchCode.h"
 #include "patches/arm7/CardiTaskThreadPatchAsm.h"
 #include "thumbInstructions.h"
@@ -94,15 +95,34 @@ void CardiTaskThreadPatch::ApplyPatch(PatchContext& patchContext)
     u32 patch1Size = SECTION_SIZE(patch_carditaskthread);
     void* patch1Address = patchContext.GetPatchHeap().Alloc(patch1Size);
     auto loaderPlatform = patchContext.GetLoaderPlatform();
-    auto readPatchCode = loaderPlatform->CreateSdReadPatchCode(
-        patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
-    auto writePatchCode = loaderPlatform->CreateSdWritePatchCode(
-        patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
-    auto sectorRemapPatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<SaveOffsetToSdSectorPatchCode>
-    (
-        patchContext.GetPatchHeap(),
-        (const save_file_info_t*)((u32)SHARED_SAVE_FILE_INFO - 0x02F00000 + 0x02700000)
-    );
+    const IReadSectorsPatchCode *readPatchCode;
+    const IWriteSectorsPatchCode *writePatchCode;
+    const ISectorRemapPatchCode *sectorRemapPatchCode;
+
+    if (loaderPlatform->HasSaveReadWrite())
+    {
+        readPatchCode = loaderPlatform->CreateSaveReadPatchCode(
+            patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
+        writePatchCode = loaderPlatform->CreateSaveWritePatchCode(
+            patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
+        sectorRemapPatchCode = patchContext.GetPatchCodeCollection().GetOrAddSharedPatchCode([&]
+        {
+            return new OffsetToSectorRemapPatchCode(patchContext.GetPatchHeap());
+        });
+    }
+    else
+    {
+        readPatchCode = loaderPlatform->CreateSdReadPatchCode(
+            patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
+        writePatchCode = loaderPlatform->CreateSdWritePatchCode(
+            patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
+        sectorRemapPatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<SaveOffsetToSdSectorPatchCode>
+        (
+            patchContext.GetPatchHeap(),
+            (const save_file_info_t*)((u32)SHARED_SAVE_FILE_INFO - 0x02F00000 + 0x02700000)
+        );
+    }
+
     auto readSavePatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<ReadSavePatchCode>
     (
         patchContext.GetPatchHeap(),
