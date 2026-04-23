@@ -68,7 +68,7 @@ public:
         });
     }
 
-    bool HasDmaSdReads() const override { return true; }
+    // bool HasDmaSdReads() const override { return true; }
 
     bool HasRomReads() const override { return true; }
 
