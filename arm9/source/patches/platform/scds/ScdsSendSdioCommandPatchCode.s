@@ -21,7 +21,7 @@ scds_sendSdioCommand:
     movs r3, #0x33
     str r3, [r4,#0x8]
     movs r3, #0x40
-    ands r3, r3, r0
+    orrs r3, r3, r0
     strb r3, [r4,#0xA]
     lsrs r3, r1, #24
     strb r3, [r4,#0xB]

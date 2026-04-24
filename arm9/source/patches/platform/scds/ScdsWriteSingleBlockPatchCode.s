@@ -10,7 +10,7 @@
 .type scds_writeSingleBlock, %function
 scds_writeSingleBlock:
 
-    push {r4-r5,lr}
+    push {r0,r4-r5,lr}
 
     // Set up a counter for number of bytes transferred
     // This will be incremented and checked in further labels
@@ -40,8 +40,9 @@ SCDS_write_512:
     lsrs r3, r3, #8
     strb r3, [r4,#0xB]
 
+    ldr r3, scds_sendCommand_wrsb_address
     movs r0, #0
-    bl blx_r7
+    bl blx_r3
 
 SCDS_write_512_loop:
     adds r5, #4
@@ -49,10 +50,10 @@ SCDS_write_512_loop:
     cmp r3, #128 // 128 words in 512 bytes
     blt SCDS_write_512
 
-    pop {r4-r5,pc}
+    pop {r0,r4-r5,pc}
 
-blx_r7:
-    bx r7
+blx_r3:
+    bx r3
 
 .balign 4
 

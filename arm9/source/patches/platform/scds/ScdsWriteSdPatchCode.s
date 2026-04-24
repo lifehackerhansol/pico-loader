@@ -19,28 +19,26 @@ sector_loop:
     // write at sd sector, sector << 9 == 0xaabbccdd
     // 33 00 58 AA BB CC DD 01
 
-    // left shift sector address 1
-    lsls r3, r0, #9
+    // left shift sector address 9
+    lsls r7, r0, #9
 
-    ldr r7, scds_sendSdioCommand_wr_address
+    ldr r3, scds_sendSdioCommand_wr_address
     push {r0-r2}
     movs r0, #24
-    movs r1, r3
+    movs r1, r7
     movs r2, #1
-    bl blx_r7
+    bl blx_r3
 
-    ldr r7, scds_sendCommand_wr_address
+    ldr r3, scds_sendCommand_wr_address
     movs r0, #1
-    movs r3, #0x30
-    str r3, [r4,#8]
-    movs r3, #0x40
-    strb r3, [r4,#9]
-    bl blx_r7
+    movs r6, #0x30
+    str r6, [r4,#8]
+    movs r6, #0x40
+    strb r6, [r4,#9]
+    bl blx_r3
 
-    pop {r0-r2}
-
-    ldr r7, scds_writeSingleBlock_address
-    bl blx_r7
+    ldr r3, scds_writeSingleBlock_address
+    bl blx_r3
 
 SCDS_stop_transmission:
     /*
@@ -48,12 +46,13 @@ SCDS_stop_transmission:
         The rest of the command buffer is ignored
         35 00 00 00 00 00 00 00
     */
-    movs r3, #0x35
-    str r3, [r4,#0x8]
-    push {r0}
+    ldr r3, scds_sendCommand_wr_address
+    movs r6, #0x35
+    str r6, [r4,#0x8]
     movs r0, #1
-    bl blx_r7
-    pop {r0}
+    bl blx_r3
+
+    pop {r0-r2}
 
     adds r0, #1
     subs r2, #1
@@ -61,8 +60,8 @@ SCDS_stop_transmission:
 
     pop {r4-r7,pc}
 
-blx_r7:
-    bx r7
+blx_r3:
+    bx r3
 
 .balign 4
 
