@@ -20,7 +20,7 @@ class ScdsWriteSdPatchCode : public PatchCode, public IWriteSectorsPatchCode
 public:
     explicit ScdsWriteSdPatchCode(PatchHeap& patchHeap,
                                  const ScdsSendCommandPatchCode* scdsSendCommandPatchCode,
-                                 const ScdsSendSDIOCommandPatchCode* scdsSendSdioCommandPatchCode,
+                                 const ScdsSendSdioCommandPatchCode* scdsSendSdioCommandPatchCode,
                                  const ScdsWriteSingleBlockPatchCode* scdsWriteSingleBlockPatchCode
                                 )
         : PatchCode(SECTION_START(scds_writesd), SECTION_SIZE(scds_writesd), patchHeap) {

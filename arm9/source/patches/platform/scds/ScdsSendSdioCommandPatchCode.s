@@ -9,7 +9,7 @@
 // r1: sdio param
 // r2: response type
 scds_sendSdioCommand:
-    push {r4,lr}
+    push {r3,lr}
 
     // SDIO command
     // 33 00 AA BB BB BB BB CC
@@ -36,7 +36,7 @@ scds_sendSdioCommand:
     movs r0, #1
     bl blx_r3
 
-    pop {r4,pc}
+    pop {r3,pc}
 
 blx_r3:
     bx r3

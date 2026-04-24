@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "../LoaderPlatform.h"
+#include "ScdsReadSdDmaPatchCode.h"
 #include "ScdsReadSdPatchCode.h"
 #include "ScdsReadSectorLoopPatchCode.h"
 #include "ScdsSendCommandPatchCode.h"
@@ -15,25 +16,65 @@ public:
     const IReadSectorsPatchCode* CreateSdReadPatchCode(
         PatchCodeCollection& patchCodeCollection, PatchHeap& patchHeap) const override
     {
+        const ScdsSendCommandPatchCode* sendCommandPatchCode = 
+            patchCodeCollection.GetOrAddSharedPatchCode([&]
+            {
+                return new ScdsSendCommandPatchCode(patchHeap);
+            });
+        const ScdsSendSdioCommandPatchCode* sendSdioCommandPatchCode = 
+            patchCodeCollection.GetOrAddSharedPatchCode([&]
+            {
+                return new ScdsSendSdioCommandPatchCode(patchHeap, sendCommandPatchCode);
+            });
         return patchCodeCollection.GetOrAddSharedPatchCode([&]
         {
-            const ScdsSendCommandPatchCode* sendCommandPatchCode = 
-                patchCodeCollection.GetOrAddSharedPatchCode([&]
-                {
-                    return new ScdsSendCommandPatchCode(patchHeap);
-                });
-
             return new ScdsReadSdPatchCode(patchHeap,
-                sendCommandPatchCode,
+                sendSdioCommandPatchCode,
                 patchCodeCollection.GetOrAddSharedPatchCode([&]
                 {
-                    return new ScdsSendSDIOCommandPatchCode(patchHeap, sendCommandPatchCode);
+                    return new ScdsReadSectorLoopPatchCode(
+                        patchHeap,
+                        sendCommandPatchCode
+                    );
                 }),
                 patchCodeCollection.GetOrAddSharedPatchCode([&]
                 {
-                    return new ScdsReadSectorLoopPatchCode(patchHeap, sendCommandPatchCode);
-                }));
+                    return new ScdsSdStopTransmissionPatchCode(
+                        patchHeap,
+                        sendCommandPatchCode,
+                        sendSdioCommandPatchCode
+                    );
+                })
+            );
         });
+    }
+
+    const IReadSectorsDmaPatchCode* CreateSdReadDmaPatchCode(PatchCodeCollection& patchCodeCollection,
+        PatchHeap& patchHeap, const void* miiCardDmaCopy32Ptr) const override
+    {
+        const ScdsSendCommandPatchCode* sendCommandPatchCode = 
+            patchCodeCollection.GetOrAddSharedPatchCode([&]
+            {
+                return new ScdsSendCommandPatchCode(patchHeap);
+            });
+        const ScdsSendSdioCommandPatchCode* sendSdioCommandPatchCode = 
+            patchCodeCollection.GetOrAddSharedPatchCode([&]
+            {
+                return new ScdsSendSdioCommandPatchCode(patchHeap, sendCommandPatchCode);
+            });
+        return patchCodeCollection.AddUniquePatchCode<ScdsReadSdDmaPatchCode>(
+            patchHeap, miiCardDmaCopy32Ptr,
+            sendCommandPatchCode,
+            sendSdioCommandPatchCode,
+            patchCodeCollection.GetOrAddSharedPatchCode([&]
+            {
+                return new ScdsSdStopTransmissionPatchCode(
+                    patchHeap,
+                    sendCommandPatchCode,
+                    sendSdioCommandPatchCode
+                );
+            })
+        );
     }
 
     const IWriteSectorsPatchCode* CreateSdWritePatchCode(
@@ -51,7 +92,7 @@ public:
                 sendCommandPatchCode,
                 patchCodeCollection.GetOrAddSharedPatchCode([&]
                 {
-                    return new ScdsSendSDIOCommandPatchCode(patchHeap, sendCommandPatchCode);
+                    return new ScdsSendSdioCommandPatchCode(patchHeap, sendCommandPatchCode);
                 }),
                 patchCodeCollection.GetOrAddSharedPatchCode([&]
                 {
@@ -62,4 +103,5 @@ public:
 
     LoaderPlatformType GetPlatformType() const override { return LoaderPlatformType::Slot1; }
 
+    bool HasDmaSdReads() const override { return true; }
 };

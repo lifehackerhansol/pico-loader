@@ -10,7 +10,6 @@
 .type scds_readSectorLoop, %function
 scds_readSectorLoop:
     push {r0,r4-r5,lr}
-    ldr r4, =0x040001A0
     ldr r5, =0x04100010
 
 sector_loop:
@@ -23,8 +22,8 @@ sector_loop:
 SCDS_read_block:
     movs r3, #0x36
     str r3, [r4,#8]
-    ldr r3, =0xA1180000
-    str r3, [r4,#4]
+    movs r3, #0xA1
+    strb r3, [r4,#7]
 
 SCDS_read_block_loop:
     ldrb r3, [r4,#6]

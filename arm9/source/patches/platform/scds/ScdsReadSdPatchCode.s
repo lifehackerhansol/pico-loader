@@ -34,21 +34,8 @@ SCDS_read_multiple_block:
     bl blx_r3
 
 SCDS_stop_transmission:
-    push {r0-r2}
-    ldr r3, scds_sendSdioCommand_rd_address
-    movs r0, #12
-    movs r1, #0
-    movs r2, #0
+    ldr r3, scds_sdStopTransmission_rd_address
     bl blx_r3
-
-    ldr r3, scds_sendCommand_rd_address
-    movs r0, #1
-    movs r5, #0x30
-    str r5, [r4,#8]
-    movs r5, #0x40
-    strb r5, [r4,#9]
-    bl blx_r3
-    pop {r0-r2}
 
     pop {r4-r7,pc}
 
@@ -57,16 +44,16 @@ blx_r3:
 
 .balign 4
 
-.global scds_sendCommand_rd_address
-scds_sendCommand_rd_address:
-    .word 0
-
 .global scds_sendSdioCommand_rd_address
 scds_sendSdioCommand_rd_address:
     .word 0
 
 .global scds_readSectorLoop_address
 scds_readSectorLoop_address:
+    .word 0
+
+.global scds_sdStopTransmission_rd_address
+scds_sdStopTransmission_rd_address:
     .word 0
 
 .pool
