@@ -8,6 +8,8 @@
 scds_sdStopTransmission:
     push {r0-r4,lr}
     ldr r4, =0x040001A0
+    movs r0, #0x80
+    strb r0, [r4,#0x1]
 
     ldr r3, scds_sendSdioCommand_cmd12_address
     movs r0, #12
