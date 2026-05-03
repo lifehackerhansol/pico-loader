@@ -169,10 +169,23 @@ stopTransmission_poll_check_transfer_end:
     ldr r3, dsx_writeNand_stopTransmission_waitBusy_address
     bl blx_r3_2
 
-    ldr r3, =0x51D10
-waitByLoop:
-    subs r3, #1
-    bgt waitByLoop
+    ldr r3, =191
+    movs r4, #0x04
+    lsls r4, r4, #24
+wait_until_vcount_191:
+    ldrh r7, [r4, #6]
+    cmp r7, r3
+    bne wait_until_vcount_191
+
+wait_until_vcount_not_191:
+    ldrh r7, [r4, #6]
+    cmp r7, r3
+    beq wait_until_vcount_191
+
+wait_full_vcount:
+    ldrh r7, [r4, #6]
+    cmp r7, r3
+    bne wait_full_vcount
 
     pop {r4-r7,pc}
 
