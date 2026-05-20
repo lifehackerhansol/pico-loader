@@ -76,6 +76,7 @@ private:
     bool TryLoadRomHeader(u32 romOffset);
     void HandleAntiPiracy();
     void RemapWram();
+    bool VerifyArm79i();
     bool TryLoadArm9();
     bool TryLoadArm9i();
     bool TryDecryptArm9i();

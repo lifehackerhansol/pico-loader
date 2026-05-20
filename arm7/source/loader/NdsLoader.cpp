@@ -247,6 +247,14 @@ void NdsLoader::Load(BootMode bootMode)
         RemapWram();
     }
 
+    if (!VerifyArm79i()) {
+        LOG_WARNING("Invalid DSi binary found, force DS mode\n");
+        // force override unitcode as NDS
+        // so that all Arm9i/Arm7i checks are bypassed
+        // and switches to DS mode
+        _romHeader.unitCode = 0;
+    }
+
     if (bootMode != BootMode::Multiboot)
     {
         if (!TryLoadArm9())
@@ -785,6 +793,69 @@ void NdsLoader::RemapWram()
     }
 
     LOG_DEBUG("Wram configured\n");
+}
+
+bool NdsLoader::VerifyArm79i()
+{
+    u32 signatures[2];
+    UINT bytesRead = 0;
+    FRESULT result;
+
+    // This either means the header is missing entirely
+    // or there is actually no A9i/A7i present
+    // TryLoadArm{7,9}i() has no problem with this being 0,
+    // so return true
+    if (_romHeader.arm9iSize == 0)
+    {
+        return true;
+    }
+
+    if (_romHeader.arm7iSize == 0)
+    {
+        return true;
+    }
+
+    if (f_lseek(&_romFile, _romHeader.arm9iRomOffset) != FR_OK)
+    {
+        LOG_WARNING("Failed to seek to arm9i\n");
+        return false;
+    }
+
+    result = f_read(&_romFile, signatures, 4, &bytesRead);
+    if (result != FR_OK || bytesRead != 4)
+    {
+        LOG_WARNING("Failed to read arm9i. Result: %d, bytesRead: %d\n", result, bytesRead);
+        return false;
+    }
+
+    if (f_lseek(&_romFile, _romHeader.arm7iRomOffset) != FR_OK)
+    {
+        LOG_WARNING("Failed to seek to arm7i\n");
+        return false;
+    }
+
+    result = f_read(&_romFile, signatures + 1, _romHeader.arm7iSize, &bytesRead);
+    if (result != FR_OK || bytesRead != 4)
+    {
+        LOG_WARNING("Failed to read arm7i. Result: %d, bytesRead: %d\n", result, bytesRead);
+        return false;
+    }
+
+    // Ensure the binaries are not zero-filled
+    if (signatures[0] == 0 || signatures[1] == 0)
+    {
+        LOG_WARNING("Arm9i or arm7i is zero-filled, invalid binary\n");
+        return false;
+    }
+
+    // Ensure the binaries are not FF-filled
+    if (signatures[0] == 0xFFFFFFFF || signatures[1] == 0xFFFFFFFF)
+    {
+        LOG_WARNING("Arm9i or arm7i is FF-filled, invalid binary\n");
+        return false;
+    }
+
+    return true;
 }
 
 bool NdsLoader::TryLoadArm9()
